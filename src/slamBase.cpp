@@ -404,6 +404,11 @@ vector<Point3f> slamBase::imagToCVpt( Mat depth, CAMERA_INTRINSIC_PARAMETERS& ca
 
     for(int i=0;i<camera.width;i++){
         for(int j=0;j<camera.height;j++){
+
+            if ((i<176&&i>70) && (j>0&&j<80)){
+                continue;
+            }
+
             cv::Point3f p;
             double d = depth.at<double>(j,i,2);
             p.z = float( d) ;

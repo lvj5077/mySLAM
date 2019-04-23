@@ -58,7 +58,6 @@ void pose_estimation::RANSACpose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3
     //     std::cout << ' ' << myvector[i];
     // }
     
-    
     int foundT = 0;
     int foundN = 0;
     int maxN = 0;

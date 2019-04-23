@@ -27,7 +27,7 @@ using namespace pcl;
 // };
 
 const int startIdx=3;
-const int endIdx=7;
+const int endIdx=35;
 
 void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,vector<SR4kFRAME> &frames, 
     pose_estimation myVO_SR4k,slamBase myBase_SR4k );
@@ -50,7 +50,7 @@ int main( int argc, char** argv )
     C_sr4k.depthH = 7.000;
     C_sr4k.height = 144;
     C_sr4k.width = 176;
-    C_sr4k.exp = 8;//50;
+    C_sr4k.exp = 32;//50;
 
 
     std::vector<myPoseAtoB> poseChain;
@@ -77,8 +77,8 @@ int main( int argc, char** argv )
 
     std::vector<SR4kFRAME> frames;
     std::vector<SR4kFRAME> keyframes;
-    // string data_path = "/Users/lingqiujin/Data/RV_Data2/d1_";
-    string data_path = "/Users/lingqiujin/Data/test4K/dt_";
+    string data_path = "/Users/lingqiujin/Data/RV_Data2/d1_";
+    // string data_path = "/Users/lingqiujin/Data/test4K/dt_";
 
     // endIdx = endIdx-1; // frame 2 frame // make sure last frame is valid
     for (int idx=startIdx;idx<endIdx;idx++){
@@ -223,19 +223,33 @@ void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,
     Mat mat_r, vec_t;
     std::vector<int> inliers;
     cv::Mat T = cv::Mat::eye(4,4,CV_64F);
-    myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
+    if (p_XYZs1.size()<10){
+        cout << "warning!!!!!!!"<<endl;
+    }
+    else{
+        myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
+    }
     
-
-    float roll,pitch,yaw;
-    myBase_SR4k.rotMtoRPY(T, roll, pitch, yaw);
-    cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+    
+    // float roll,pitch,yaw;
+    // myBase_SR4k.rotMtoRPY(T, roll, pitch, yaw);
+    // cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
 
     // cout << "T = "<<endl<< T <<endl;
+    double inlierR = (double)inliers.size() /p_XYZs2.size() ;
+    if(inliers.size()<20 && inlierR<0.6){
+        cout << "warning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+    }
 
-    myPoseAtoB foundPose;
-    foundPose.posA_id = firstF_id;
-    foundPose.posB_id = secondF_id;
-    foundPose.T_ab = T;
-    poseChain.push_back(foundPose);
+    else    // update pose chain
+    {
+        cout << "inlier ratio "<< inlierR <<endl;
+        myPoseAtoB foundPose;
+        foundPose.posA_id = firstF_id;
+        foundPose.posB_id = secondF_id;
+        foundPose.T_ab = T;
+        foundPose.inlierRatio = inlierR;
+        poseChain.push_back(foundPose);
+    }
 
 }

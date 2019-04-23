@@ -38,9 +38,9 @@ fstream
 vector
 -
 
-/Users/lingqiujin/Q_MAC/work/myVOsum/src/slamBase.cpp
+/Users/lingqiujin/Q_MAC/work/mySLAM/src/slamBase.cpp
 slamBase.h
-/Users/lingqiujin/Q_MAC/work/myVOsum/src/slamBase.h
+/Users/lingqiujin/Q_MAC/work/mySLAM/src/slamBase.h
 opencv2/ml.hpp
 -
 opencv2/opencv.hpp

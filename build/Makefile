@@ -48,10 +48,10 @@ RM = /opt/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/lingqiujin/Q_MAC/work/myVOsum
+CMAKE_SOURCE_DIR = /Users/lingqiujin/Q_MAC/work/mySLAM
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/lingqiujin/Q_MAC/work/myVOsum/build
+CMAKE_BINARY_DIR = /Users/lingqiujin/Q_MAC/work/mySLAM/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/myVOsum/build/CMakeFiles /Users/lingqiujin/Q_MAC/work/myVOsum/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/myVOsum/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -109,19 +109,6 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
-
-#=============================================================================
-# Target rules for targets named testT
-
-# Build rule for target.
-testT: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 testT
-.PHONY : testT
-
-# fast build rule for target.
-testT/fast:
-	$(MAKE) -f src/CMakeFiles/testT.dir/build.make src/CMakeFiles/testT.dir/build
-.PHONY : testT/fast
 
 #=============================================================================
 # Target rules for targets named pose_estimation
@@ -163,6 +150,19 @@ myG2Oedge/fast:
 .PHONY : myG2Oedge/fast
 
 #=============================================================================
+# Target rules for targets named optimizeG2O
+
+# Build rule for target.
+optimizeG2O: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 optimizeG2O
+.PHONY : optimizeG2O
+
+# fast build rule for target.
+optimizeG2O/fast:
+	$(MAKE) -f src/CMakeFiles/optimizeG2O.dir/build.make src/CMakeFiles/optimizeG2O.dir/build
+.PHONY : optimizeG2O/fast
+
+#=============================================================================
 # Target rules for targets named slamBase
 
 # Build rule for target.
@@ -196,10 +196,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... testT"
 	@echo "... pose_estimation"
 	@echo "... mySLAM"
 	@echo "... myG2Oedge"
+	@echo "... optimizeG2O"
 	@echo "... slamBase"
 	@echo "... main"
 .PHONY : help

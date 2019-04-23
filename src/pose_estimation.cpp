@@ -49,18 +49,6 @@ void pose_estimation::pose3d3d_dirctSVD(vector<Point3f> & p_XYZs1,vector<Point3f
 
 void pose_estimation::RANSACpose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3f>&  p_XYZs2, Mat & mat_r, Mat & vec_t, std::vector<int> & inliers ,Mat* T ){
 
-    // cv::Mat outM3by4G;// = cv::Mat::zeros(3,4,CV_64F);
-    // cv::Mat inliers3dG;
-    // cv::estimateAffine3D(p_XYZs2,p_XYZs1, outM3by4G, inliers3dG, 3, 0.999); 
-
-    // cout << outM3by4G<<endl;
-    // Mat Tm = cv::Mat::eye(4,4,CV_64F);
-    // mat_r = outM3by4G(cv::Rect(0,0,3,3));
-    // vec_t = outM3by4G(cv::Rect(3,0,1,3));
-    // mat_r.copyTo(Tm(cv::Rect(0, 0, 3, 3)));
-    // vec_t.copyTo(Tm(cv::Rect(3, 0, 1, 3)));  
-    // *T = Tm;
-
     int iterations = 0;
     int N = p_XYZs1.size();
 
@@ -192,8 +180,19 @@ void pose_estimation::RANSACpose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3
     // cout << "inlier " << maxN + testPtsN<< " in "<< N <<endl;
     cout << "inlier size " << inliers.size() << " in "<< N <<endl;
     cout << "inlier error " << minError <<endl;
-    cout <<"======================================================================================================================="<<endl;
+    cout <<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<endl;
 
+    // cv::Mat outM3by4G;// = cv::Mat::zeros(3,4,CV_64F);
+    // cv::Mat inliers3dG;
+    // cv::estimateAffine3D(p_XYZs1,p_XYZs2, outM3by4G, inliers3dG, 0.08, 0.999); 
+
+    // // cout << outM3by4G<<endl;
+    // Mat Tm = cv::Mat::eye(4,4,CV_64F);
+    // mat_r = outM3by4G(cv::Rect(0,0,3,3));
+    // vec_t = outM3by4G(cv::Rect(3,0,1,3));
+    // mat_r.copyTo(Tm(cv::Rect(0, 0, 3, 3)));
+    // vec_t.copyTo(Tm(cv::Rect(3, 0, 1, 3)));  
+    // *T = Tm;
 }
 
 void pose_estimation::pose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3f>&  p_XYZs2, Mat & mat_r, Mat & vec_t, Mat* T ){

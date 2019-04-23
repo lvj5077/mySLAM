@@ -4,12 +4,13 @@
 #include <sstream>
 #include <iomanip>
 
+#include <stdlib.h>   
 
 
-#include "pose_estimation.h"
 #include "slamBase.h"
-
-#include <stdlib.h>    
+#include "pose_estimation.h"
+#include "optimizeG2O.h"
+ 
 
 using namespace std;
 using namespace pcl;
@@ -32,31 +33,14 @@ int main( int argc, char** argv )
     C_sr4k.depthH = 7.000;
     C_sr4k.height = 144;
     C_sr4k.width = 176;
-    C_sr4k.exp = 50;
+    C_sr4k.exp = 8;//50;
 
 
-    string firstF = "/Users/lingqiujin/Data/RV_Data/Pitch/d1_-40/d1_0021.dat";
-    string secondF = "/Users/lingqiujin/Data/RV_Data/Pitch/d2_-37/d2_0002.dat";
-
-    vector<Point2f> p_UVs1, p_UVs2;
-    vector<Point3f> p_XYZs1, p_XYZs2;
-
-
-    Mat mat_r, vec_t;
-    cv::Mat T = cv::Mat::eye(4,4,CV_64F);
-
-    struct myPoseAtoB
-    {
-        int posA_id = 0;
-        int posB_id = 0;
-        Mat T_ab = cv::Mat::eye(4,4,CV_64F);
-        
-    };
     std::vector<myPoseAtoB> poseChain;
-
 
     pose_estimation myVO_SR4k; 
     slamBase myBase_SR4k; 
+    optimizeG2O myOpt_SR4k; 
 
     myBase_SR4k.setCamera(C_sr4k);
 
@@ -68,49 +52,95 @@ int main( int argc, char** argv )
     };
     cv::Mat cameraMatrix_4k( 3, 3, CV_64F, camera_matrix_data_4k );
 
-    int startIdx=1;
-    int endIdx=77;
+    int startIdx=3;
+    int endIdx=7;
 
-    // PointCloud<pcl::PointXYZ> pc_all;
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr pc_all (new pcl::PointCloud<pcl::PointXYZ>);
 
+    std::vector<SR4kFRAME> frames;
+    std::vector<SR4kFRAME> keyframes;
+    // string data_path = "/Users/lingqiujin/Data/RV_Data2/d1_";
+    string data_path = "/Users/lingqiujin/Data/test4K/dt_";
+
+    // endIdx = endIdx-1; // frame 2 frame // make sure last frame is valid
     for (int idx=startIdx;idx<endIdx;idx++){
 
         std::stringstream ss;
+
         int firstF_id = idx;
         int secondF_id = idx+1;
 
-        ss << "/Users/lingqiujin/Data/RV_Data2/d1_"<<std::setw(4) << std::setfill('0') << firstF_id <<".dat";
-        firstF = ss.str();
+        ss << data_path <<std::setw(4) << std::setfill('0') << firstF_id <<".dat";
+        string firstF = ss.str();
 
         ss= std::stringstream();
-        ss << "/Users/lingqiujin/Data/RV_Data2/d1_"<<std::setw(4) << std::setfill('0') << secondF_id <<".dat";
-        secondF = ss.str();
-
-        cout << endl<<"load "<<firstF<<endl;
-        cout << "load "<<secondF<<endl;
-    
+        ss << data_path <<std::setw(4) << std::setfill('0') << secondF_id <<".dat";
+        string secondF = ss.str();
 
 
+        // SR4kFRAME f1_4k = myBase_SR4k.readSRFrame(firstF);
+        // SR4kFRAME f2_4k = myBase_SR4k.readSRFrame(secondF);
 
-        SR4kFRAME f1_4k = myBase_SR4k.readSRFrame(firstF);
-        SR4kFRAME f2_4k = myBase_SR4k.readSRFrame(secondF);
-        p_UVs1.clear();
-        p_UVs2.clear();
-        p_XYZs1.clear();
-        p_XYZs2.clear();
-        
-        myBase_SR4k.find4kMatches(f1_4k.rgb,f2_4k.rgb,f1_4k.depthXYZ,f2_4k.depthXYZ,p_UVs1,p_UVs2,p_XYZs1,p_XYZs2);
+        SR4kFRAME f1_4k; 
+        SR4kFRAME f2_4k;
+        if ( idx == startIdx ){
+            f1_4k = myBase_SR4k.readSRFrame(firstF);
+            f1_4k.frameID = firstF_id;
+            f1_4k.pose = cv::Mat::eye(4,4,CV_64F);
+            frames.push_back(f1_4k);
 
+
+            myPoseAtoB fixedAtoA;
+            fixedAtoA.posA_id = firstF_id;
+            fixedAtoA.posB_id = firstF_id;
+            fixedAtoA.T_ab = cv::Mat::eye(4,4,CV_64F);
+            poseChain.push_back(fixedAtoA);
+
+        }
+        // frame2 is always the new frame
+        f2_4k = myBase_SR4k.readSRFrame(secondF);
+        f2_4k.frameID = secondF_id;
+        frames.push_back(f2_4k); 
+
+
+        if ( (frames.back()).frameID >= firstF_id  ){
+            f1_4k = frames[ firstF_id-startIdx ];
+        }
+        if ( (frames.back()).frameID >= secondF_id  ){
+            f2_4k = frames[ secondF_id-startIdx ];
+        }
+
+
+
+        double overlapRate;
+        vector<Point2f> p_UVs1, p_UVs2;
+        vector<Point3f> p_XYZs1, p_XYZs2;
+        myBase_SR4k.find4kMatches(f1_4k,f2_4k,p_UVs1,p_UVs2,p_XYZs1,p_XYZs2,&overlapRate);
+
+        Mat mat_r, vec_t;
         std::vector<int> inliers;
+        cv::Mat T = cv::Mat::eye(4,4,CV_64F);
+        myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
+        
+
+        float roll,pitch,yaw;
+        myBase_SR4k.rotMtoRPY(T, roll, pitch, yaw);
+        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+
+        // cout << "T = "<<endl<< T <<endl;
+
+        myPoseAtoB foundPose;
+        foundPose.posA_id = firstF_id;
+        foundPose.posB_id = secondF_id;
+        foundPose.T_ab = T;
+        poseChain.push_back(foundPose);
+        
         PointCloud<pcl::PointXYZ> pc1;
         PointCloud<pcl::PointXYZ> pc2;
         
         vector<Point3f> pts1;
         vector<Point3f> pts2;
-
-
-        myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
 
         pts1 = myBase_SR4k.imagToCVpt( f1_4k.depthXYZ, C_sr4k );
         pts2 = myBase_SR4k.imagToCVpt( f2_4k.depthXYZ, C_sr4k );
@@ -118,25 +148,18 @@ int main( int argc, char** argv )
         pc1 = myBase_SR4k.cvPtsToPCL(pts1);
         pc2 = myBase_SR4k.cvPtsToPCL(pts2);
 
+        if ( idx == startIdx ){
+            *pc_all = pc1;
+        }
         Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT(T);
-
         pcl::transformPointCloud( *pc_all, *pc_all, T_eigen.matrix() );
         *pc_all = pc2+*pc_all;
-
         pcl::VoxelGrid<pcl::PointXYZ> sor;
         sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
         sor.setInputCloud (pc_all);
         sor.filter (*pc_all);
-
-        pcl::io::savePCDFile( "./pc_all.pcd", *pc_all );
-
-        myPoseAtoB findPose;
-
-        findPose.posA_id = firstF_id;
-        findPose.posB_id = secondF_id;
-        findPose.T_ab = T;
-
-        poseChain.push_back(findPose);
+        pcl::io::savePCDFile( "./"+to_string(idx)+"pc_all.pcd", *pc_all );
+        pcl::io::savePCDFile( "./"+to_string(idx)+".pcd", pc2 );
 
         // pcl::visualization::CloudViewer viewer( "viewer" );
         // viewer.showCloud( pc_12 );
@@ -144,6 +167,12 @@ int main( int argc, char** argv )
         // {
             
         // }
+
+        myOpt_SR4k.optimizePoses(poseChain, frames);
+
+        cout <<"==========================================================" <<endl;
+        cout <<"==========================================================" <<endl;
+        cout <<"==========================================================" <<endl;
 
     }
 

@@ -1,3 +1,5 @@
+#pragma once
+
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -34,8 +36,11 @@ struct CAMERA_INTRINSIC_PARAMETERS
 
 struct SR4kFRAME
 {
-    int frameID;
+    int frameID; 
     cv::Mat rgb, depthXYZ, z;
+    cv::Mat desp;
+    vector<cv::KeyPoint> kp;
+    cv::Mat pose;
 };
 
 class slamBase{
@@ -52,11 +57,9 @@ class slamBase{
 
 		SR4kFRAME readSRFrame( string inFileName);
 
-		void findMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
-			vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2);
+		void find4kMatches(SR4kFRAME & frame1, SR4kFRAME & frame2, 
+			vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2, double* overlapRate = NULL );
 
-		void find4kMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
-					vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2);
 		
 	    cv::Point3f point2dTo3d( cv::Point2f& point, double& d, CAMERA_INTRINSIC_PARAMETERS& camera );
 	    double reprojectionError( vector<Point3f> & p_XYZs1, vector<Point3f> & p_XYZs2, Mat & mat_r, Mat & vec_t );

@@ -46,6 +46,10 @@ CAMERA_INTRINSIC_PARAMETERS slamBase::getCamera(){
 
 
 SR4kFRAME slamBase::readSRFrame( string inFileName){
+
+    cout << "load "<<inFileName<<endl;
+
+
     SR4kFRAME f;
 
     int width = 176;
@@ -125,49 +129,44 @@ SR4kFRAME slamBase::readSRFrame( string inFileName){
     //     cout << I_z.at<unsigned short>(2,i) <<"  "<<I_depth.at<double>(2,i,2) <<endl;
     // }
 
+    cv::Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(0,5,.002);
+    f2d->detect ( f.rgb,f.kp );
+    f2d->compute ( f.rgb, f.kp, f.desp );
+
     return f;
 }
 
 
-void slamBase::findMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
-			vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2){
+void slamBase::find4kMatches(SR4kFRAME & frame1, SR4kFRAME & frame2, 
+            vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2, double* overlapRate){
 
-    vector<KeyPoint> keypoints_1, keypoints_2;
-    Mat descriptors_1, descriptors_2;
+    p_UVs1.clear();
+    p_UVs2.clear();
+    p_XYZs1.clear();
+    p_XYZs2.clear();
 
     vector<Point2f> tp_UVs1;
     vector<Point2f> tp_UVs2;
-    vector<Point3f> tp_XYZs1;
-    vector<Point3f> tp_XYZs2;
 
-    cv::Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(0,5,.002);
-    f2d->detect ( rgb1,keypoints_1 );
-    f2d->detect ( rgb2,keypoints_2 );
-
-    f2d->compute ( rgb1, keypoints_1, descriptors_1 );
-    f2d->compute ( rgb2, keypoints_2, descriptors_2 );
-
+    // vector< DMatch > matches;
     // BFMatcher matcher(NORM_L2);
-    vector< DMatch > matches;
     // matcher.match(descriptors_1,descriptors_2, matches);
-
-    vector< DMatch > goodMatches;
-
     // nth_element(matches.begin(),matches.begin()+50,matches.end());
     // matches.erase(matches.begin()+50,matches.end());
 
-    cout << "found " << descriptors_1.rows<<endl;
+    vector< DMatch > goodMatches;
+
+    cout << "found " << (frame1.desp).rows<<endl;
     int k = 2; 
     double sum_dis = 0;     
     double dis_ratio = 0.5; 
 
-    cv::flann::Index* mpFlannIndex = new cv::flann::Index(descriptors_1, cv::flann::KDTreeIndexParams()); 
+    cv::flann::Index* mpFlannIndex = new cv::flann::Index((frame1.desp), cv::flann::KDTreeIndexParams()); 
 
-    int start_feature = 0; 
-    int num_features = descriptors_2.rows; 
+    int num_features = (frame2.desp).rows; 
     cv::Mat indices(num_features, k, CV_32S); 
     cv::Mat dists(num_features, k, CV_32F); 
-    cv::Mat relevantDescriptors = descriptors_2.clone(); 
+    cv::Mat relevantDescriptors = (frame2.desp).clone(); 
 
     mpFlannIndex->knnSearch(relevantDescriptors, indices, dists, k, flann::SearchParams(16) ); 
 
@@ -194,162 +193,20 @@ void slamBase::findMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
     // goodMatches = matches;
     cv::Mat imgMatches;
 
-
     // cout <<"Find total "<<goodMatches.size()<<" matches."<<endl;
     // cv::drawMatches( rgb2, keypoints_2, rgb1, keypoints_1, goodMatches, imgMatches );
     // cv::imshow( "Good matches", imgMatches );
     // cv::waitKey( 0 );
-
-
 
     vector< DMatch > valid3Dmatches;
     int dupx1,dupy1,dupx2,dupy2;
     for ( DMatch m:goodMatches )
     {
 
-        cv::Point2f p1 = keypoints_1[m.trainIdx].pt;
-        cv::Point2f p2 = keypoints_2[m.queryIdx].pt;
-        // cout << p1 << " ~~pvp~~  " << p2<<endl;
-        // cout <<depth1<<endl;
-        double d1 = double(depth1.ptr<unsigned short> ( int ( p1.y ) ) [ int ( p1.x ) ])/C.scale;
-        double d2 = double(depth2.ptr<unsigned short> ( int ( p2.y ) ) [ int ( p2.x ) ])/C.scale;
-        // cout << d1 << " ~~dvd~~  " << d2<<endl;
-        // if ( d1<C.depthL||d1>C.depthH || d2<C.depthL||d2>C.depthH)   // bad depth
-        if ( d1 == 0 || d2 == 0 || d1>9 || d2>9) 
-            continue;
-
-        if (dupx1 == int(p1.x) && dupy1 == int(p1.y) && dupx2 == int(p2.x) && dupy2 == int(p2.y))
-            continue;
-
-        dupx1 = int(p1.x);
-        dupy1 = int(p1.y);
-        dupx2 = int(p2.x);
-        dupy2 = int(p2.y);
-
-
-
-        cv::Point3f p_XYZ1,p_XYZ2;
-        p_XYZ1 = point2dTo3d(p1,d1,C);
-        p_XYZ2 = point2dTo3d(p2,d2,C);
-        // if ( norm(tp_UVs1[i]-tp_UVs2[i])> 40 && norm(tp_XYZs1[i]-tp_XYZs2[i])>1)
-        if ( norm(p_XYZ1-p_XYZ2)>.5)
-            continue;
-
-        p_UVs1.push_back( p1 );
-        p_UVs2.push_back( p2 );
-
-
-        p_XYZs1.push_back( p_XYZ1 );
-        p_XYZs2.push_back( p_XYZ2 );
-
-        valid3Dmatches.push_back(m);
-
-    }
-
-    // cout<<"3d-3d tp_XYZs2: "<<p_XYZs1<< "   "<< p_XYZs2 << endl;
-    // cout <<"Find total "<<valid3Dmatches.size()<<" matches."<<endl;
-    // cv::drawMatches( rgb2, keypoints_2, rgb1, keypoints_1,  valid3Dmatches, imgMatches );
-    // cv::imshow( "valid3Dmatches", imgMatches );
-    // cv::waitKey( 0 );
-
-}
-
-void slamBase::find4kMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
-			vector<Point2f> &p_UVs1,vector<Point2f> &p_UVs2,vector<Point3f> &p_XYZs1,vector<Point3f> &p_XYZs2){
-
-	vector<KeyPoint> keypoints_1, keypoints_2;
-    Mat descriptors_1, descriptors_2;
-
-    vector<Point2f> tp_UVs1;
-    vector<Point2f> tp_UVs2;
-    vector<Point3f> tp_XYZs1;
-    vector<Point3f> tp_XYZs2;
-
-        // int     nfeatures = 0,
-        // int     nOctaveLayers = 3,
-        // double  contrastThreshold = 0.04,
-        // double  edgeThreshold = 10,
-        // double  sigma = 1.6   
-
-
-// nfeatures   The number of best features to retain. The features are ranked by their scores (measured in SIFT algorithm as the local contrast)
-// nOctaveLayers   The number of layers in each octave. 3 is the value used in D. Lowe paper. The number of octaves is computed automatically from the image resolution.
-// contrastThreshold   The contrast threshold used to filter out weak features in semi-uniform (low-contrast) regions. The larger the threshold, the less features are produced by the detector.
-// edgeThreshold   The threshold used to filter out edge-like features. Note that the its meaning is different from the contrastThreshold, i.e. the larger the edgeThreshold, the less features are filtered out (more features are retained).
-// sigma   The sigma of the Gaussian applied to the input image at the octave #0. If your image is captured with a weak camera with soft lenses, you might want to reduce the number.
-
-    // cv::Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(80,3,.08,20,.8);
-    cv::Ptr<Feature2D> f2d = xfeatures2d::SIFT::create(0,5,.002);
-    f2d->detect ( rgb1,keypoints_1 );
-    f2d->detect ( rgb2,keypoints_2 );
-
-    f2d->compute ( rgb1, keypoints_1, descriptors_1 );
-    f2d->compute ( rgb2, keypoints_2, descriptors_2 );
-
-    // BFMatcher matcher(NORM_L2);
-    vector< DMatch > matches;
-    // matcher.match(descriptors_1,descriptors_2, matches);
-
-    vector< DMatch > goodMatches;
-
-    // nth_element(matches.begin(),matches.begin()+50,matches.end());
-    // matches.erase(matches.begin()+50,matches.end());
-
-    cout << "found " << descriptors_1.rows<<endl;
-    int k = 2; 
-    double sum_dis = 0;     
-    double dis_ratio = 0.5; 
-
-    cv::flann::Index* mpFlannIndex = new cv::flann::Index(descriptors_1, cv::flann::KDTreeIndexParams()); 
-
-    int start_feature = 0; 
-    int num_features = descriptors_2.rows; 
-    cv::Mat indices(num_features, k, CV_32S); 
-    cv::Mat dists(num_features, k, CV_32F); 
-    cv::Mat relevantDescriptors = descriptors_2.clone(); 
-
-    mpFlannIndex->knnSearch(relevantDescriptors, indices, dists, k, flann::SearchParams(16) ); 
-
-    int* indices_ptr = indices.ptr<int>(0); 
-    float* dists_ptr = dists.ptr<float>(0); 
-    cv::DMatch m;
-    set<int> train_ids; 
-    for(int i=0; i<indices.rows; i++){
-        float dis_factor = dists_ptr[i*2] / dists_ptr[i*2+1]; 
-        if(dis_factor < dis_ratio ){
-            int train_id = indices_ptr[i*2]; 
-            if(train_ids.count(train_id) > 0) { // already add this feature 
-                // TODO: select the best matched pair 
-                continue; 
-            }
-            // add this match pair  
-            m.trainIdx = train_id; 
-            m.queryIdx = i; 
-            m.distance = dis_factor;
-            goodMatches.push_back(m);
-            train_ids.insert(train_id); 
-        }
-    }
-    // goodMatches = matches;
-    cv::Mat imgMatches;
-
-
-    // cout <<"Find total "<<goodMatches.size()<<" matches."<<endl;
-    // cv::drawMatches( rgb2, keypoints_2, rgb1, keypoints_1, goodMatches, imgMatches );
-    // cv::imshow( "Good matches", imgMatches );
-    // cv::waitKey( 0 );
-
-
-
-    vector< DMatch > valid3Dmatches;
-    int dupx1,dupy1,dupx2,dupy2;
-    for ( DMatch m:goodMatches )
-    {
-
-        cv::Point2f p1 = keypoints_1[m.trainIdx].pt;
-        cv::Point2f p2 = keypoints_2[m.queryIdx].pt;
-        double d1 = depth1.at<double>(int(p1.y),int(p1.x),2);
-        double d2 = depth2.at<double>(int(p2.y),int(p2.x),2);
+        cv::Point2f p1 = (frame1.kp)[m.trainIdx].pt;
+        cv::Point2f p2 = (frame2.kp)[m.queryIdx].pt;
+        double d1 = (frame1.depthXYZ).at<double>(int(p1.y),int(p1.x),2);
+        double d2 = (frame2.depthXYZ).at<double>(int(p2.y),int(p2.x),2);
 
         // if ( d1<C.depthL||d1>C.depthH || d2<C.depthL||d2>C.depthH)   // bad depth
         if ( d1 == 0 || d2 == 0 || d1>9 || d2>9) 
@@ -366,57 +223,35 @@ void slamBase::find4kMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
         tp_UVs1.push_back( p1 );
         tp_UVs2.push_back( p2 );
 
-        // cv::Point3f p_XYZ;
-        // p_XYZ.x = depth1.at<double>(int(p1.y),int(p1.x),0);
-        // p_XYZ.y = depth1.at<double>(int(p1.y),int(p1.x),1);
-        // p_XYZ.z = depth1.at<double>(int(p1.y),int(p1.x),2);
-        // tp_XYZs1.push_back( p_XYZ );
-        
-        // p_XYZ.x = depth2.at<double>(int(p2.y),int(p2.x),0);
-        // p_XYZ.y = depth2.at<double>(int(p2.y),int(p2.x),1);
-        // p_XYZ.z = depth2.at<double>(int(p2.y),int(p2.x),2);
-        // tp_XYZs2.push_back( p_XYZ );
-
         valid3Dmatches.push_back(m);
 
     }
 
-    // cout<<"3d-3d tp_XYZs2: "<<tp_XYZs2<< "   "<< tp_XYZs2 << endl;
-    // cout <<"Find total "<<valid3Dmatches.size()<<" matches."<<endl;
-    // cv::drawMatches( rgb2, keypoints_2, rgb1, keypoints_1,  valid3Dmatches, imgMatches );
-    // cv::imshow( "valid3Dmatches", imgMatches );
-    // cv::waitKey( 0 );
     p_XYZs1.clear();
     p_XYZs2.clear();
 
-    // p_XYZs1 = tp_XYZs1;
-    // p_XYZs2 = tp_XYZs2;
-    // p_UVs1 = tp_UVs1;
-    // p_UVs2 = tp_UVs2;
 
     vector< DMatch > distMatches;
     for ( int i=0;i<tp_UVs1.size();i++)
     {
-        // cout << norm(tp_UVs1[i]-tp_UVs2[i]) << "  " << norm(tp_XYZs1[i]-tp_XYZs2[i])<<endl;
-        // if ( norm(tp_UVs1[i]-tp_UVs2[i])> 40 && norm(tp_XYZs1[i]-tp_XYZs2[i])>1)
+
         cv::Point3f p_XYZ1;
-        p_XYZ1.x = depth1.at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),0);
-        p_XYZ1.y = depth1.at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),1);
-        p_XYZ1.z = depth1.at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),2);
+        p_XYZ1.x = (frame1.depthXYZ).at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),0);
+        p_XYZ1.y = (frame1.depthXYZ).at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),1);
+        p_XYZ1.z = (frame1.depthXYZ).at<double>(int(tp_UVs1[ i ].y),int(tp_UVs1[ i ].x),2);
 
         cv::Point3f p_XYZ2;
-        p_XYZ2.x = depth2.at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),0);
-        p_XYZ2.y = depth2.at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),1);
-        p_XYZ2.z = depth2.at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),2);
+        p_XYZ2.x = (frame2.depthXYZ).at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),0);
+        p_XYZ2.y = (frame2.depthXYZ).at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),1);
+        p_XYZ2.z = (frame2.depthXYZ).at<double>(int(tp_UVs2[ i ].y),int(tp_UVs2[ i ].x),2);
 
+        // cout << norm(tp_UVs1[i]-tp_UVs2[i]) << "  " << norm(tp_XYZs1[i]-tp_XYZs2[i])<<endl;
+        // if ( norm(tp_UVs1[i]-tp_UVs2[i])> 40 && norm(tp_XYZs1[i]-tp_XYZs2[i])>1)
         if ( norm(p_XYZ1-p_XYZ2)>1)
             continue;
 
         p_UVs1.push_back( tp_UVs1[ i ] );
         p_UVs2.push_back( tp_UVs2[ i ] );
-
-
-
 
         p_XYZs1.push_back( p_XYZ1 );
         p_XYZs2.push_back( p_XYZ2 );
@@ -425,6 +260,17 @@ void slamBase::find4kMatches(Mat rgb1,Mat rgb2,Mat depth1,Mat depth2,
     }
 
     cout << "p_XYZs1.size() "<<p_XYZs1.size()  << endl;
+
+    * overlapRate = (double) distMatches.size()/indices.rows ; 
+    cout << "similarity: " <<  * overlapRate <<" "<<  distMatches.size() <<" "<< indices.rows <<endl;
+    
+
+    // cout<<"3d-3d tp_XYZs2: "<<tp_XYZs2<< "   "<< tp_XYZs2 << endl;
+    // cout <<"Find total "<<distMatches.size()<<" matches."<<endl;
+    // cv::drawMatches( (frame2.rgb), (frame2.kp), (frame1.rgb), (frame1.kp),  distMatches, imgMatches );
+    // cv::imshow( "valid3Dmatches", imgMatches );
+    // cv::waitKey( 0 );
+
     // cout<<"3d-3d pairs: "<<p_XYZs1.size() <<endl;
     // cout<<"3d-3d pairs: "<<p_XYZs1<< "   "<< p_XYZs2 << endl;
 }

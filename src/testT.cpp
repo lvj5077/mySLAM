@@ -94,6 +94,8 @@ int main( int argc, char** argv )
     cv::Mat my(cv::Size(dataSize,1),CV_64FC1, Scalar(0));
     cv::Mat mz(cv::Size(dataSize,1),CV_64FC1, Scalar(0));
 
+    PointCloud<pcl::PointXYZ> pc;
+
     for (int idx=1;idx<dataSize+1;idx++){
 
         if (idx<10){
@@ -321,12 +323,7 @@ int main( int argc, char** argv )
         pcl::io::savePCDFile( "./pc_12.pcd", pc_12 );
 
 
-        // pcl::visualization::CloudViewer viewer( "viewer" );
-        // viewer.showCloud( pc_12 );
-        // while( !viewer.wasStopped() )
-        // {
-            
-        // }
+        pc = pc_12;
     }
 
     cv::Scalar mean,stddev;
@@ -344,6 +341,7 @@ int main( int argc, char** argv )
     cout <<"my mean: "<<mean.val[0]<<"  std: "<<stddev.val[0]<<endl;
     cv::meanStdDev(mz,mean,stddev);
     cout <<"mz   mean: "<<mean.val[0]<<"  std: "<<stddev.val[0]<<endl;
+
 
 
     return 0;

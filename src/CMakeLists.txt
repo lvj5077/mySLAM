@@ -58,43 +58,21 @@ TARGET_LINK_LIBRARIES( pose_estimation
    myG2Oedge
 )
 
-ADD_EXECUTABLE( testT testT.cpp )
-TARGET_LINK_LIBRARIES( testT
-	slamBase
-	pose_estimation
-	${OpenCV_LIBS}
-	${PCL_LIBRARIES}
+
+ADD_LIBRARY( optimizeG2O optimizeG2O.cpp )
+TARGET_LINK_LIBRARIES( optimizeG2O
+   slamBase
+   g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension g2o_solver_csparse g2o_types_slam3d
+   ${CSparse_include_LIB} 
+   ${OpenCV_LIBS}
 )
+
 
 ADD_EXECUTABLE( mySLAM mySLAM.cpp )
 TARGET_LINK_LIBRARIES( mySLAM
    slamBase
    pose_estimation
+   optimizeG2O
    ${OpenCV_LIBS}
    ${PCL_LIBRARIES}
 )
-
-# add_executable( feature_extraction feature_extraction.cpp  )
-# target_link_libraries( feature_extraction ${OpenCV_LIBS} )
-
-# # add_executable( pose_estimation_2d2d pose_estimation_2d2d.cpp extra.cpp ) # use this if in OpenCV2 
-# add_executable( pose_estimation_2d2d pose_estimation_2d2d.cpp )
-# target_link_libraries( pose_estimation_2d2d ${OpenCV_LIBS} )
-
-# # add_executable( triangulation triangulation.cpp extra.cpp) # use this if in opencv2 
-# add_executable( triangulation triangulation.cpp )
-# target_link_libraries( triangulation ${OpenCV_LIBS} )
-
-# add_executable( pose_estimation_3d2d pose_estimation_3d2d.cpp )
-# target_link_libraries( pose_estimation_3d2d 
-#    ${OpenCV_LIBS}
-#    ${CSparse_include_LIB} 
-#    g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension
-# )
-
-# add_executable( pose_estimation_3d3d pose_estimation_3d3d.cpp )
-# target_link_libraries( pose_estimation_3d3d 
-#    ${OpenCV_LIBS}
-#    g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension 
-#    ${CSparse_include_LIB} 
-# )

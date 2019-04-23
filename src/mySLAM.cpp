@@ -9,11 +9,28 @@
 
 #include "slamBase.h"
 #include "pose_estimation.h"
-#include "optimizeG2O.h"
+
+
  
 
 using namespace std;
 using namespace pcl;
+
+#include "optimizeG2O.h"
+
+// struct myPoseAtoB
+// {
+//     int posA_id = 0;
+//     int posB_id = 0;
+//     Mat T_ab = cv::Mat::eye(4,4,CV_64F);
+    
+// };
+
+const int startIdx=3;
+const int endIdx=7;
+
+void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,vector<SR4kFRAME> &frames, 
+    pose_estimation myVO_SR4k,slamBase myBase_SR4k );
 
 int main( int argc, char** argv )
 {
@@ -40,6 +57,7 @@ int main( int argc, char** argv )
 
     pose_estimation myVO_SR4k; 
     slamBase myBase_SR4k; 
+
     optimizeG2O myOpt_SR4k; 
 
     myBase_SR4k.setCamera(C_sr4k);
@@ -52,8 +70,7 @@ int main( int argc, char** argv )
     };
     cv::Mat cameraMatrix_4k( 3, 3, CV_64F, camera_matrix_data_4k );
 
-    int startIdx=3;
-    int endIdx=7;
+
 
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr pc_all (new pcl::PointCloud<pcl::PointXYZ>);
@@ -81,7 +98,6 @@ int main( int argc, char** argv )
 
         // SR4kFRAME f1_4k = myBase_SR4k.readSRFrame(firstF);
         // SR4kFRAME f2_4k = myBase_SR4k.readSRFrame(secondF);
-
         SR4kFRAME f1_4k; 
         SR4kFRAME f2_4k;
         if ( idx == startIdx ){
@@ -102,71 +118,13 @@ int main( int argc, char** argv )
         f2_4k = myBase_SR4k.readSRFrame(secondF);
         f2_4k.frameID = secondF_id;
         frames.push_back(f2_4k); 
-
-
-        if ( (frames.back()).frameID >= firstF_id  ){
-            f1_4k = frames[ firstF_id-startIdx ];
-        }
-        if ( (frames.back()).frameID >= secondF_id  ){
-            f2_4k = frames[ secondF_id-startIdx ];
-        }
-
-
-
-        double overlapRate;
-        vector<Point2f> p_UVs1, p_UVs2;
-        vector<Point3f> p_XYZs1, p_XYZs2;
-        myBase_SR4k.find4kMatches(f1_4k,f2_4k,p_UVs1,p_UVs2,p_XYZs1,p_XYZs2,&overlapRate);
-
-        Mat mat_r, vec_t;
-        std::vector<int> inliers;
-        cv::Mat T = cv::Mat::eye(4,4,CV_64F);
-        myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
         
+        frame2framePose(firstF_id,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k);
 
-        float roll,pitch,yaw;
-        myBase_SR4k.rotMtoRPY(T, roll, pitch, yaw);
-        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
-
-        // cout << "T = "<<endl<< T <<endl;
-
-        myPoseAtoB foundPose;
-        foundPose.posA_id = firstF_id;
-        foundPose.posB_id = secondF_id;
-        foundPose.T_ab = T;
-        poseChain.push_back(foundPose);
-        
-        PointCloud<pcl::PointXYZ> pc1;
-        PointCloud<pcl::PointXYZ> pc2;
-        
-        vector<Point3f> pts1;
-        vector<Point3f> pts2;
-
-        pts1 = myBase_SR4k.imagToCVpt( f1_4k.depthXYZ, C_sr4k );
-        pts2 = myBase_SR4k.imagToCVpt( f2_4k.depthXYZ, C_sr4k );
-
-        pc1 = myBase_SR4k.cvPtsToPCL(pts1);
-        pc2 = myBase_SR4k.cvPtsToPCL(pts2);
-
-        if ( idx == startIdx ){
-            *pc_all = pc1;
-        }
-        Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT(T);
-        pcl::transformPointCloud( *pc_all, *pc_all, T_eigen.matrix() );
-        *pc_all = pc2+*pc_all;
-        pcl::VoxelGrid<pcl::PointXYZ> sor;
-        sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
-        sor.setInputCloud (pc_all);
-        sor.filter (*pc_all);
-        pcl::io::savePCDFile( "./"+to_string(idx)+"pc_all.pcd", *pc_all );
-        pcl::io::savePCDFile( "./"+to_string(idx)+".pcd", pc2 );
-
-        // pcl::visualization::CloudViewer viewer( "viewer" );
-        // viewer.showCloud( pc_12 );
-        // while( !viewer.wasStopped() )
-        // {
-            
-        // }
+        srand (time(NULL));
+        int randomCheckID = rand()%frames.size()+ startIdx; 
+        cout << randomCheckID<<endl;
+        frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k);
 
         myOpt_SR4k.optimizePoses(poseChain, frames);
 
@@ -176,5 +134,108 @@ int main( int argc, char** argv )
 
     }
 
+
+
+    // PointCloud<pcl::PointXYZ> pc1;
+    // PointCloud<pcl::PointXYZ> pc2;
+    
+    // vector<Point3f> pts1;
+    // vector<Point3f> pts2;
+
+    // pts1 = myBase_SR4k.imagToCVpt( f1_4k.depthXYZ, C_sr4k );
+    // pts2 = myBase_SR4k.imagToCVpt( f2_4k.depthXYZ, C_sr4k );
+
+    // pc1 = myBase_SR4k.cvPtsToPCL(pts1);
+    // pc2 = myBase_SR4k.cvPtsToPCL(pts2);
+
+    // if ( idx == startIdx ){
+    //     *pc_all = pc1;
+    // }
+    // Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT(T);
+    // pcl::transformPointCloud( *pc_all, *pc_all, T_eigen.matrix() );
+    // *pc_all = pc2+*pc_all;
+    // pcl::VoxelGrid<pcl::PointXYZ> sor;
+    // sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
+    // sor.setInputCloud (pc_all);
+    // sor.filter (*pc_all);
+    // pcl::io::savePCDFile( "./"+to_string(idx)+"pc_all.pcd", *pc_all );
+    // pcl::io::savePCDFile( "./"+to_string(idx)+".pcd", pc2 );
+
+    // pcl::visualization::CloudViewer viewer( "viewer" );
+    // viewer.showCloud( pc_12 );
+    // while( !viewer.wasStopped() )
+    // {
+        
+    // }
+    for ( int i=0; i<poseChain.size(); i++ )
+    {               
+        Mat cv44T = (poseChain[i]).T_ab ;
+        float roll,pitch,yaw;
+        myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
+        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+    }
+    cout <<"==========================================================" <<endl;
+    for ( int i=0; i<frames.size(); i++ )
+    {               
+        Mat cv44T = (frames[i]).pose ;
+        float roll,pitch,yaw;
+        myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
+        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+    }
+
+    PointCloud<pcl::PointXYZ> pc;
+    vector<Point3f> pt3f = myBase_SR4k.imagToCVpt( (frames[0]).depthXYZ, C_sr4k );
+    pc = myBase_SR4k.cvPtsToPCL(pt3f);
+    *pc_all = pc;
+
+    for ( int i=1; i<frames.size(); i++ )
+    {               
+        pt3f = myBase_SR4k.imagToCVpt( (frames[i]).depthXYZ, C_sr4k );
+        pc = myBase_SR4k.cvPtsToPCL(pt3f);
+
+        Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT( (frames[i]).pose );
+        pcl::transformPointCloud( pc, pc, (T_eigen.inverse()).matrix() );
+        *pc_all = pc+*pc_all;
+        pcl::VoxelGrid<pcl::PointXYZ> sor;
+        sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
+        sor.setInputCloud (pc_all);
+        sor.filter (*pc_all);
+    }
+    pcl::io::savePCDFile( "./pc_all.pcd", *pc_all );
+
     return 0;
+}
+
+
+void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,vector<SR4kFRAME> &frames, 
+    pose_estimation myVO_SR4k,slamBase myBase_SR4k ){
+
+    SR4kFRAME f1_4k = frames[ firstF_id-startIdx ];
+    SR4kFRAME f2_4k = frames[ secondF_id-startIdx ];
+
+    // pose_estimation myVO_SR4k; 
+    // slamBase myBase_SR4k; 
+    double overlapRate;
+    vector<Point2f> p_UVs1, p_UVs2;
+    vector<Point3f> p_XYZs1, p_XYZs2;
+    myBase_SR4k.find4kMatches(f1_4k,f2_4k,p_UVs1,p_UVs2,p_XYZs1,p_XYZs2,&overlapRate);
+
+    Mat mat_r, vec_t;
+    std::vector<int> inliers;
+    cv::Mat T = cv::Mat::eye(4,4,CV_64F);
+    myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
+    
+
+    float roll,pitch,yaw;
+    myBase_SR4k.rotMtoRPY(T, roll, pitch, yaw);
+    cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+
+    // cout << "T = "<<endl<< T <<endl;
+
+    myPoseAtoB foundPose;
+    foundPose.posA_id = firstF_id;
+    foundPose.posB_id = secondF_id;
+    foundPose.T_ab = T;
+    poseChain.push_back(foundPose);
+
 }

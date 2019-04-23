@@ -520,6 +520,9 @@ myVOsum_BINARY_DIR:STATIC=/Users/lingqiujin/Q_MAC/work/mySLAM/build/src
 myVOsum_SOURCE_DIR:STATIC=/Users/lingqiujin/Q_MAC/work/mySLAM/src
 
 //Dependencies for the target
+optPose_LIB_DEPENDS:STATIC=general;/usr/local/lib;general;opencv_calib3d;general;opencv_core;general;opencv_dnn;general;opencv_features2d;general;opencv_flann;general;opencv_highgui;general;opencv_imgcodecs;general;opencv_imgproc;general;opencv_ml;general;opencv_objdetect;general;opencv_photo;general;opencv_shape;general;opencv_stitching;general;opencv_superres;general;opencv_video;general;opencv_videoio;general;opencv_videostab;general;opencv_viz;
+
+//Dependencies for the target
 optimizeG2O_LIB_DEPENDS:STATIC=general;/usr/local/lib;general;slamBase;general;g2o_core;general;g2o_stuff;general;g2o_types_sba;general;g2o_csparse_extension;general;g2o_solver_csparse;general;g2o_types_slam3d;general;/usr/local/Cellar/suite-sparse/5.3.0/lib/;general;opencv_calib3d;general;opencv_core;general;opencv_dnn;general;opencv_features2d;general;opencv_flann;general;opencv_highgui;general;opencv_imgcodecs;general;opencv_imgproc;general;opencv_ml;general;opencv_objdetect;general;opencv_photo;general;opencv_shape;general;opencv_stitching;general;opencv_superres;general;opencv_video;general;opencv_videoio;general;opencv_videostab;general;opencv_viz;
 
 //Dependencies for the target

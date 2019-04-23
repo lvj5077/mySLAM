@@ -407,9 +407,11 @@ vector<Point3f> slamBase::imagToCVpt( Mat depth, CAMERA_INTRINSIC_PARAMETERS& ca
             cv::Point3f p;
             double d = depth.at<double>(j,i,2);
             p.z = float( d) ;
-            p.x = ( i - camera.cx) * p.z / camera.fx;
-            p.y = ( j - camera.cy) * p.z / camera.fy;
+            // p.x = ( i - camera.cx) * p.z / camera.fx;
+            // p.y = ( j - camera.cy) * p.z / camera.fy;
 
+            p.x = float( depth.at<double>(j,i,0) ) ;
+            p.y = float( depth.at<double>(j,i,1) ) ;
 
             pts_cv.push_back(p);
         }

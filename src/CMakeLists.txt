@@ -72,7 +72,9 @@ ADD_EXECUTABLE( mySLAM mySLAM.cpp )
 TARGET_LINK_LIBRARIES( mySLAM
    slamBase
    pose_estimation
+
    optimizeG2O
+
    ${OpenCV_LIBS}
    ${PCL_LIBRARIES}
 )

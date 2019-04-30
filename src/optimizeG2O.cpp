@@ -1,6 +1,33 @@
 #include "optimizeG2O.h"
 
+int optimizeG2O::trackFromRoot(vector<myPoseAtoB> poseChain, int frameID){
+    int ReachEnd =0;
+    for ( int k=0; k<poseChain.size(); k++ )
+    {
+        if(poseChain[k].posB_id==frameID){
+            ReachEnd = 1;
+        }
+    }
+    // todo:
+    // check if all frame ID can track back to first id
+
+    return ReachEnd;
+}
+
 void optimizeG2O::optimizePoses(vector<myPoseAtoB> poseChain, vector<SR4kFRAME>& frames){
+
+    for ( int i=0; i<frames.size(); i++ )
+    {
+        if (trackFromRoot(poseChain, (frames[i]).frameID)>0){
+            frames[i].valid =1;
+        }else{
+            cout << "separated vo!!!!!!!!!!!!!!!!!!!!!!!!!" <<endl;
+            cout << "break at frame: "<< frames[i].frameID <<endl;
+            cout << "separated vo!!!!!!!!!!!!!!!!!!!!!!!!!" <<endl<<endl;
+        }
+    }
+
+
 
     g2o::SparseOptimizer optimizer;
     
@@ -27,9 +54,12 @@ void optimizeG2O::optimizePoses(vector<myPoseAtoB> poseChain, vector<SR4kFRAME>&
         if ( i == 0)
             v->setFixed( true ); 
 
-        v->setEstimate( g2o::SE3Quat() );
-        v->setId( (frames[i]).frameID );
-        optimizer.addVertex(v);
+        if (frames[i].valid >0)
+        {
+            v->setEstimate( g2o::SE3Quat() );
+            v->setId( (frames[i]).frameID );
+            optimizer.addVertex(v);
+        }
     }
 
     // cout <<"i am here"<<endl;
@@ -79,11 +109,13 @@ void optimizeG2O::optimizePoses(vector<myPoseAtoB> poseChain, vector<SR4kFRAME>&
     // cout << "frames.size() "<< frames.size()<<endl;
     for ( int i=1; i<frames.size(); i++ )
     {
-		g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>( optimizer.vertex( (frames[i]).frameID ) );
-		Eigen::Isometry3d pose = v->estimate();
-		Mat cvT;
-		eigen2cv(pose.matrix(),cvT);
-		(frames[i]).pose = cvT;
+        if (frames[i].valid >0){
+            g2o::VertexSE3* v = dynamic_cast<g2o::VertexSE3*>( optimizer.vertex( (frames[i]).frameID ) );
+            Eigen::Isometry3d pose = v->estimate();
+            Mat cvT;
+            eigen2cv(pose.matrix(),cvT);
+            (frames[i]).pose = cvT;
+        }
     }
 
     // cout <<"i am out"<<endl;

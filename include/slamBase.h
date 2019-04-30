@@ -41,6 +41,7 @@ struct SR4kFRAME
     cv::Mat desp;
     vector<cv::KeyPoint> kp;
     cv::Mat pose = cv::Mat::eye(4,4,CV_64F);
+    int valid;
 };
 
 class slamBase{

@@ -46,4 +46,5 @@ class optimizeG2O{
 		// optimizeG2O();
 		// ~optimizeG2O();
 		void optimizePoses(vector<myPoseAtoB> poseChain, vector<SR4kFRAME>& frames);
+		int trackFromRoot(vector<myPoseAtoB> poseChain, int frameID);
 };

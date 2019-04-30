@@ -26,11 +26,11 @@ using namespace pcl;
     
 // };
 
-const int startIdx=3;
-const int endIdx=35;
+const int startIdx=1;
+const int endIdx=584; //584
 
 void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,vector<SR4kFRAME> &frames, 
-    pose_estimation myVO_SR4k,slamBase myBase_SR4k );
+    pose_estimation myVO_SR4k,slamBase myBase_SR4k, int loopclosure );
 
 int main( int argc, char** argv )
 {
@@ -50,7 +50,7 @@ int main( int argc, char** argv )
     C_sr4k.depthH = 7.000;
     C_sr4k.height = 144;
     C_sr4k.width = 176;
-    C_sr4k.exp = 32;//50;
+    C_sr4k.exp = 32;//8,32;
 
 
     std::vector<myPoseAtoB> poseChain;
@@ -82,6 +82,7 @@ int main( int argc, char** argv )
 
     // endIdx = endIdx-1; // frame 2 frame // make sure last frame is valid
     for (int idx=startIdx;idx<endIdx;idx++){
+
 
         std::stringstream ss;
 
@@ -119,14 +120,22 @@ int main( int argc, char** argv )
         f2_4k.frameID = secondF_id;
         frames.push_back(f2_4k); 
         
-        frame2framePose(firstF_id,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k);
+        frame2framePose(firstF_id,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,0);
 
         srand (time(NULL));
         int randomCheckID = rand()%frames.size()+ startIdx; 
-        cout << randomCheckID<<endl;
-        frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k);
+        cout << randomCheckID<<" " << secondF_id << endl;
+        frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
 
-        myOpt_SR4k.optimizePoses(poseChain, frames);
+
+        if((secondF_id-startIdx)>7){
+            frame2framePose(secondF_id-2,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-4,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-6,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        }
+
+
+        // myOpt_SR4k.optimizePoses(poseChain, frames);
 
         cout <<"==========================================================" <<endl;
         cout <<"==========================================================" <<endl;
@@ -134,7 +143,7 @@ int main( int argc, char** argv )
 
     }
 
-
+    myOpt_SR4k.optimizePoses(poseChain, frames);
 
     // PointCloud<pcl::PointXYZ> pc1;
     // PointCloud<pcl::PointXYZ> pc2;
@@ -167,48 +176,67 @@ int main( int argc, char** argv )
     // {
         
     // }
-    for ( int i=0; i<poseChain.size(); i++ )
-    {               
-        Mat cv44T = (poseChain[i]).T_ab ;
-        float roll,pitch,yaw;
-        myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
-        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
-    }
+    // for ( int i=0; i<poseChain.size(); i++ )
+    // {               
+    //     cout << poseChain[i].posA_id<<"   " << poseChain[i].posB_id<<endl;
+    // }
     cout <<"==========================================================" <<endl;
+    ofstream myfile;
+    myfile.open ("/Users/lingqiujin/Q_MAC/work/mySLAM/data.txt");
     for ( int i=0; i<frames.size(); i++ )
-    {               
-        Mat cv44T = (frames[i]).pose ;
-        float roll,pitch,yaw;
-        myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
-        cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+    {   
+        if (frames[i].valid <1){
+            cout <<"No pose_estimation for frame: "<<frames[i].frameID<<endl;
+        }
+        else{
+            Mat cv44T = (frames[i]).pose ;
+            float roll,pitch,yaw;
+            myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
+            // cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
+
+            stringstream ss;
+            ss << roll<<","<<pitch<<","<<yaw<<","<<cv44T.at<double>(0,3) << ","<< cv44T.at<double>(1,3)<< "," << cv44T.at<double>(2,3);
+            string rpyxyz = ss.str();
+            myfile << rpyxyz <<"\n";
+        }
     }
 
-    PointCloud<pcl::PointXYZ> pc;
-    vector<Point3f> pt3f = myBase_SR4k.imagToCVpt( (frames[0]).depthXYZ, C_sr4k );
-    pc = myBase_SR4k.cvPtsToPCL(pt3f);
-    *pc_all = pc;
+    myfile.close();
 
-    for ( int i=1; i<frames.size(); i++ )
-    {               
-        pt3f = myBase_SR4k.imagToCVpt( (frames[i]).depthXYZ, C_sr4k );
-        pc = myBase_SR4k.cvPtsToPCL(pt3f);
+    // PointCloud<pcl::PointXYZ> pc;
+    // vector<Point3f> pt3f = myBase_SR4k.imagToCVpt( (frames[0]).depthXYZ, C_sr4k );
+    // pc = myBase_SR4k.cvPtsToPCL(pt3f);
+    // *pc_all = pc;
 
-        Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT( (frames[i]).pose );
-        pcl::transformPointCloud( pc, pc, (T_eigen.inverse()).matrix() );
-        *pc_all = pc+*pc_all;
-        pcl::VoxelGrid<pcl::PointXYZ> sor;
-        sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
-        sor.setInputCloud (pc_all);
-        sor.filter (*pc_all);
-    }
-    pcl::io::savePCDFile( "./pc_all.pcd", *pc_all );
+    // for ( int i=1; i<frames.size(); i++ )
+    // {               
+    //     pt3f = myBase_SR4k.imagToCVpt( (frames[i]).depthXYZ, C_sr4k );
+    //     pc = myBase_SR4k.cvPtsToPCL(pt3f);
+
+    //     Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT( (frames[i]).pose );
+    //     pcl::transformPointCloud( pc, pc, (T_eigen.inverse()).matrix() );
+    //     *pc_all = pc+*pc_all;
+    //     pcl::VoxelGrid<pcl::PointXYZ> sor;
+    //     sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
+    //     sor.setInputCloud (pc_all);
+    //     sor.filter (*pc_all);
+    // }
+    // pcl::io::savePCDFile( "./pc_all.pcd", *pc_all );
 
     return 0;
 }
 
 
 void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,vector<SR4kFRAME> &frames, 
-    pose_estimation myVO_SR4k,slamBase myBase_SR4k ){
+    pose_estimation myVO_SR4k,slamBase myBase_SR4k, int loopclosure){
+
+    int posechainUpdated = 0;
+    int inliers_threshold = 25;
+    double inlierR_threshold = 0.7;
+    if (loopclosure >0){
+        inliers_threshold = 30;
+        inlierR_threshold = 0.8;
+    }
 
     SR4kFRAME f1_4k = frames[ firstF_id-startIdx ];
     SR4kFRAME f2_4k = frames[ secondF_id-startIdx ];
@@ -223,11 +251,42 @@ void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,
     Mat mat_r, vec_t;
     std::vector<int> inliers;
     cv::Mat T = cv::Mat::eye(4,4,CV_64F);
-    if (p_XYZs1.size()<10){
-        cout << "warning!!!!!!!"<<endl;
+    if (p_XYZs1.size()<inliers_threshold){
+        cout << "not enough inputs!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
     }
     else{
         myVO_SR4k.RANSACpose3d3d_SVD(p_XYZs2, p_XYZs1, mat_r, vec_t, inliers, &T );
+
+        double inlierR = (double)inliers.size() /p_XYZs2.size() ;
+        cout << "inlier ratio "<< inlierR <<endl;
+        if((inliers.size()<inliers_threshold && inlierR<inlierR_threshold)){
+            cout << "bad pose_estimation!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+        }
+        else    // update pose chain
+        {
+            myPoseAtoB foundPose;
+            foundPose.posA_id = firstF_id;
+            foundPose.posB_id = secondF_id;
+            foundPose.T_ab = T;
+            foundPose.inlierRatio = inlierR;
+            poseChain.push_back(foundPose);
+            posechainUpdated = 1;
+        }
+    }
+
+    if (loopclosure<1 && posechainUpdated<1){
+        firstF_id = firstF_id-1;
+        if (firstF_id<startIdx || (secondF_id-firstF_id)>5){
+            cout << "VO failed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            cout << "VO failed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            cout << "VO failed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            cout << "VO failed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            cout << "VO failed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+        }
+        else{
+          frame2framePose(firstF_id,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,0); 
+        }
+       
     }
     
     
@@ -236,20 +295,6 @@ void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,
     // cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
 
     // cout << "T = "<<endl<< T <<endl;
-    double inlierR = (double)inliers.size() /p_XYZs2.size() ;
-    if(inliers.size()<20 && inlierR<0.6){
-        cout << "warning!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-    }
 
-    else    // update pose chain
-    {
-        cout << "inlier ratio "<< inlierR <<endl;
-        myPoseAtoB foundPose;
-        foundPose.posA_id = firstF_id;
-        foundPose.posB_id = secondF_id;
-        foundPose.T_ab = T;
-        foundPose.inlierRatio = inlierR;
-        poseChain.push_back(foundPose);
-    }
 
 }

@@ -117,6 +117,13 @@ SR4kFRAME slamBase::readSRFrame( string inFileName){
 
     // GaussianBlur(I_z, I_z, Size(3, 3), 1);
 
+    // for(int i=0;i<width;i++){
+    //     for(int j=0;j<height;j++){
+
+    //         I_depth.at<double>(j,i,2) = I_z.at<double>(j,i);
+    //     }
+    // }
+
     f.rgb = I_gray.clone();
     f.depthXYZ = I_depth.clone();
 
@@ -261,8 +268,8 @@ void slamBase::find4kMatches(SR4kFRAME & frame1, SR4kFRAME & frame2,
 
     cout << "p_XYZs1.size() "<<p_XYZs1.size()  << endl;
 
-    * overlapRate = (double) distMatches.size()/indices.rows ; 
-    cout << "similarity: " <<  * overlapRate <<" "<<  distMatches.size() <<" "<< indices.rows <<endl;
+    * overlapRate = (double) distMatches.size()/indices.rows; 
+    // cout << "similarity: " <<  * overlapRate <<" "<<  distMatches.size() <<" "<< indices.rows <<endl;
     
 
     // cout<<"3d-3d tp_XYZs2: "<<tp_XYZs2<< "   "<< tp_XYZs2 << endl;
@@ -405,7 +412,7 @@ vector<Point3f> slamBase::imagToCVpt( Mat depth, CAMERA_INTRINSIC_PARAMETERS& ca
     for(int i=0;i<camera.width;i++){
         for(int j=0;j<camera.height;j++){
 
-            if ((i<176&&i>70) && (j>0&&j<80)){
+            if ((i<176&&i>60) && (j>0&&j<80)){
                 continue;
             }
 

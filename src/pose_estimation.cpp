@@ -174,6 +174,7 @@ void pose_estimation::RANSACpose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3
         Mat Tm = cv::Mat::eye(4,4,CV_64F);
         mat_r = Tm(cv::Rect(0,0,3,3));
         vec_t = Tm(cv::Rect(3,0,1,3));
+        inliers.clear();
         *T = Tm;
     }
     // cout << "inlier " << maxN + testPtsN<< " in "<< N <<endl;

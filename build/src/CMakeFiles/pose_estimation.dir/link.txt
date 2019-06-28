@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../lib/libpose_estimation.a  CMakeFiles/pose_estimation.dir/pose_estimation.cpp.o
-/usr/bin/ranlib ../../lib/libpose_estimation.a

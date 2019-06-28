@@ -101,7 +101,7 @@ void optimizeG2O::optimizePoses(vector<myPoseAtoB> poseChain, vector<SR4kFRAME>&
 	}
 	optimizer.save("./result_before.g2o");
 	optimizer.initializeOptimization();
-    optimizer.optimize(100);
+    optimizer.optimize(1000);
     optimizer.save("./result_after.g2o");
 
     // update all poses

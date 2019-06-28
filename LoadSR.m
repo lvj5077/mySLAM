@@ -50,7 +50,7 @@ figure,pcshow(pointCloud(xyzPoints))
 
 %%
 
-d = load('/Users/lingqiujin/Data/RV_Data/Translation/Y2/frm_0080.dat');
+d = load('/Users/lingqiujin/Data/trajectory_exp7/d1_0376.dat');
 
 z = d(1:144,:);
 x = d(1*144+1:2*144,:);
@@ -62,11 +62,13 @@ y = d(2*144+1:3*144,:);
 
 
 c = d(3*144+1:4*144,:);
-base = ceil(log(max(max(c)))/log(2))-8;
+% base = ceil(log(max(max(c)))/log(2))-8;
 % c = uint16(c);
-c = uint8(c / (2^base));
+c = uint8(c / 20);
 % c = imadjust(c);
-imshow(c)
+figure,imshow(c)
+
+%%
 conf = d(4*144+1:5*144,:);
 
 CC = reshape(d(3*144+1:4*144,:),[1,144*176]);
@@ -135,24 +137,25 @@ c_y = cy/k
 
 %%
 
-Files=dir('/Users/lingqiujin/Data/RV_Data2/*.dat');
+% Files=dir('/Users/lingqiujin/Downloads/2019-05-17T15-30-28/color_rgb/*.png');
 %     Files=dir([char(dir_name),'/color/*.jpg']);
 sumImage = zeros;
-for k=1:1100
-    d = load([Files(k).folder '/' Files(k).name]);
-    c = uint8(d(3*144+1:4*144,:)/(32));
+for k=1:4300
+    d = imread(['/Users/lingqiujin/Downloads/2019-05-20T10-41-19/color_rgb/' int2str(k) '.png']);
+    c = rgb2gray(d);
+%     c = uint8(d(3*144+1:4*144,:)/(20));
 %     c = im2uint8(uint16(d(3*144+1:4*144,:)));
 %     c = imadjust(c);
 %     imshow(c)
-    ffname = ['/Users/lingqiujin/Data/RV_Data2/color/' int2str(k) '.png'];
+    ffname = ['/Users/lingqiujin/Downloads/2019-05-20T10-41-19/color/' int2str(k) '.png'];
 %     ffname(end-2:end)='png';
     imwrite(c, ffname)
     
-    z = 1000*d(1:144,:);
-    z = uint16(z);
-    ffname = ['/Users/lingqiujin/Data/RV_Data/Pitch/37/depth/' int2str(k) '.png'];
-%     ffname(end-2:end)='png';
-    imwrite(z, ffname)
+%     z = 1000*d(1:144,:);
+%     z = uint16(z);
+%     ffname = ['/Users/lingqiujin/Data/RV_Data/Pitch/37/depth/' int2str(k) '.png'];
+% %     ffname(end-2:end)='png';
+%     imwrite(z, ffname)
 end
 
 %%

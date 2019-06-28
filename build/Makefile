@@ -39,19 +39,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/local/bin/cmake
+CMAKE_COMMAND = /usr/local/Cellar/cmake/3.14.5/bin/cmake
 
 # The command to remove a file.
-RM = /opt/local/bin/cmake -E remove -f
+RM = /usr/local/Cellar/cmake/3.14.5/bin/cmake -E remove -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/lingqiujin/Q_MAC/work/mySLAM
+CMAKE_SOURCE_DIR = /Users/jin/work/mySLAM
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/lingqiujin/Q_MAC/work/mySLAM/build
+CMAKE_BINARY_DIR = /Users/jin/work/mySLAM/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -59,7 +59,7 @@ CMAKE_BINARY_DIR = /Users/lingqiujin/Q_MAC/work/mySLAM/build
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/opt/local/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/local/Cellar/cmake/3.14.5/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -70,7 +70,7 @@ rebuild_cache/fast: rebuild_cache
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/opt/local/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/local/Cellar/cmake/3.14.5/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jin/work/mySLAM/build/CMakeFiles /Users/jin/work/mySLAM/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lingqiujin/Q_MAC/work/mySLAM/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jin/work/mySLAM/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -109,6 +109,19 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+#=============================================================================
+# Target rules for targets named monoPC
+
+# Build rule for target.
+monoPC: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 monoPC
+.PHONY : monoPC
+
+# fast build rule for target.
+monoPC/fast:
+	$(MAKE) -f src/CMakeFiles/monoPC.dir/build.make src/CMakeFiles/monoPC.dir/build
+.PHONY : monoPC/fast
 
 #=============================================================================
 # Target rules for targets named pose_estimation
@@ -196,6 +209,7 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... monoPC"
 	@echo "... pose_estimation"
 	@echo "... mySLAM"
 	@echo "... myG2Oedge"

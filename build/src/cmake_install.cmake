@@ -1,4 +1,4 @@
-# Install script for directory: /Users/lingqiujin/Q_MAC/work/mySLAM/src
+# Install script for directory: /Users/jin/work/mySLAM/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

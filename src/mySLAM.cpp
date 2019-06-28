@@ -77,8 +77,8 @@ int main( int argc, char** argv )
 
     std::vector<SR4kFRAME> frames;
     std::vector<SR4kFRAME> keyframes;
+    // string data_path = "/Users/lingqiujin/Data/trajectory_exp7/d1_";
     string data_path = "/Users/lingqiujin/Data/RV_Data2/d1_";
-    // string data_path = "/Users/lingqiujin/Data/test4K/dt_";
 
     // endIdx = endIdx-1; // frame 2 frame // make sure last frame is valid
     for (int idx=startIdx;idx<endIdx;idx++){
@@ -122,18 +122,26 @@ int main( int argc, char** argv )
         
         frame2framePose(firstF_id,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,0);
 
-        srand (time(NULL));
-        int randomCheckID = rand()%frames.size()+ startIdx; 
-        cout << randomCheckID<<" " << secondF_id << endl;
-        frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        // srand (time(NULL));
+        // int randomCheckID = rand()%frames.size()+ startIdx; 
+        // cout << randomCheckID<<" " << secondF_id << endl;
+        // frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
 
 
-        if((secondF_id-startIdx)>7){
-            frame2framePose(secondF_id-2,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
-            frame2framePose(secondF_id-4,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
-            frame2framePose(secondF_id-6,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
-        }
-
+        // if((secondF_id-startIdx)>7){
+        //     frame2framePose(secondF_id-2,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-3,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-4,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-6,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     // frame2framePose(secondF_id-5,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        // }
+        // if((secondF_id-startIdx)>7){
+        //     frame2framePose(secondF_id-6,secondF_id-3,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-5,secondF_id-3,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-4,secondF_id-3,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-2,secondF_id-3,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        //     frame2framePose(secondF_id-1,secondF_id-3,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        // }
 
         // myOpt_SR4k.optimizePoses(poseChain, frames);
 
@@ -182,7 +190,7 @@ int main( int argc, char** argv )
     // }
     cout <<"==========================================================" <<endl;
     ofstream myfile;
-    myfile.open ("/Users/lingqiujin/Q_MAC/work/mySLAM/data.txt");
+    myfile.open ("/Users/lingqiujin/work/mySLAM/data.txt");
     for ( int i=0; i<frames.size(); i++ )
     {   
         if (frames[i].valid <1){
@@ -200,29 +208,47 @@ int main( int argc, char** argv )
             myfile << rpyxyz <<"\n";
         }
     }
-
     myfile.close();
 
-    // PointCloud<pcl::PointXYZ> pc;
-    // vector<Point3f> pt3f = myBase_SR4k.imagToCVpt( (frames[0]).depthXYZ, C_sr4k );
-    // pc = myBase_SR4k.cvPtsToPCL(pt3f);
-    // *pc_all = pc;
+    for (int idx=startIdx;idx<endIdx;idx++){
+        int firstF_id = idx;
+        int secondF_id = idx+1;
+        // srand (time(NULL));
+        // int randomCheckID = rand()%frames.size()+ startIdx; 
+        // frame2framePose(randomCheckID,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        if((secondF_id-startIdx)>8){
+            frame2framePose(secondF_id-2,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-3,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-4,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-5,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            frame2framePose(secondF_id-6,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            // frame2framePose(secondF_id-7,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            // frame2framePose(secondF_id-9,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            // frame2framePose(secondF_id-12,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+            // frame2framePose(secondF_id-5,secondF_id,poseChain,frames,myVO_SR4k,myBase_SR4k,1);
+        }
+    }
+    myOpt_SR4k.optimizePoses(poseChain, frames);
 
-    // for ( int i=1; i<frames.size(); i++ )
-    // {               
-    //     pt3f = myBase_SR4k.imagToCVpt( (frames[i]).depthXYZ, C_sr4k );
-    //     pc = myBase_SR4k.cvPtsToPCL(pt3f);
+    myfile.open ("/Users/lingqiujin/work/mySLAM/dataOpt.txt");
+    for ( int i=0; i<frames.size(); i++ )
+    {   
+        if (frames[i].valid <1){
+            cout <<"No pose_estimation for frame: "<<frames[i].frameID<<endl;
+        }
+        else{
+            Mat cv44T = (frames[i]).pose ;
+            float roll,pitch,yaw;
+            myBase_SR4k.rotMtoRPY(cv44T, roll, pitch, yaw);
+            // cout << "roll " << roll<<" pitch " << pitch<<" yaw " << yaw<<endl;
 
-    //     Eigen::Isometry3d T_eigen = myBase_SR4k.cvTtoEigenT( (frames[i]).pose );
-    //     pcl::transformPointCloud( pc, pc, (T_eigen.inverse()).matrix() );
-    //     *pc_all = pc+*pc_all;
-    //     pcl::VoxelGrid<pcl::PointXYZ> sor;
-    //     sor.setLeafSize (0.01f, 0.01f, 0.01f); //1cm
-    //     sor.setInputCloud (pc_all);
-    //     sor.filter (*pc_all);
-    // }
-    // pcl::io::savePCDFile( "./pc_all.pcd", *pc_all );
-
+            stringstream ss;
+            ss << roll<<","<<pitch<<","<<yaw<<","<<cv44T.at<double>(0,3) << ","<< cv44T.at<double>(1,3)<< "," << cv44T.at<double>(2,3);
+            string rpyxyz = ss.str();
+            myfile << rpyxyz <<"\n";
+        }
+    }
+    myfile.close();
     return 0;
 }
 
@@ -231,10 +257,10 @@ void frame2framePose(int firstF_id,int secondF_id,vector<myPoseAtoB> &poseChain,
     pose_estimation myVO_SR4k,slamBase myBase_SR4k, int loopclosure){
 
     int posechainUpdated = 0;
-    int inliers_threshold = 25;
-    double inlierR_threshold = 0.7;
+    int inliers_threshold = 10;
+    double inlierR_threshold = 0.6;
     if (loopclosure >0){
-        inliers_threshold = 30;
+        inliers_threshold = 10;
         inlierR_threshold = 0.8;
     }
 

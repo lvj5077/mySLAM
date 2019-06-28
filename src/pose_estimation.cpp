@@ -71,7 +71,7 @@ void pose_estimation::RANSACpose3d3d_SVD(vector<Point3f>&  p_XYZs1,vector<Point3
     Mat Tfound;
     std::vector<int> finliers;
 
-    while (iterations < 3000 ) { //&& foundT==0
+    while (iterations < 200 ) { //&& foundT==0
         iterations++;
         // cout << "iterations " << iterations<<endl;
         foundN = 0; 
